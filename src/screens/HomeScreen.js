@@ -11,17 +11,32 @@ import {
 } from '../utils/calcular';
 import { carregar, salvar } from '../storage/historico';
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, route }) {
   const [expressao, setExpressao] = useState('');
   const [resultado, setResultado] = useState('');
   const [calculado, setCalculado] = useState(false); // acabou de apertar =
   const [memoria, setMemoria] = useState(0);
   const [historico, setHistorico] = useState([]);
 
-  // carrega o histórico salvo, uma vez, quando a tela abre
+  // Evolução 1: recarrega o histórico toda vez que a tela ganha foco
+  // (ao abrir o app e ao voltar da tela de histórico)
   useEffect(() => {
-    carregar().then(setHistorico);
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      carregar().then(setHistorico);
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  // Evolução 3: quando o histórico devolve um valor, ele vira a conta atual.
+  // Observa também a "chave" para funcionar ao tocar na mesma conta de novo.
+  useEffect(() => {
+    const valor = route.params?.valor;
+    if (valor !== undefined && valor !== null) {
+      setExpressao(String(valor));
+      setResultado('');
+      setCalculado(false);
+    }
+  }, [route.params?.valor, route.params?.chave]);
 
   function limpar() {
     setExpressao('');
